@@ -1,0 +1,37 @@
+# FastAPI框架
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# 数据验证
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# MongoDB
+pymongo==4.6.1
+
+# Redis
+redis==5.0.1
+
+# Celery
+celery==5.3.6
+
+# MinIO对象存储
+minio==7.2.3
+
+# 图像和视频处理
+opencv-python==4.9.0.80
+opencv-contrib-python==4.9.0.80
+numpy==1.26.3
+Pillow==10.2.0
+
+# HTTP请求
+requests==2.31.0
+
+# 配置文件
+PyYAML==6.0.1
+
+# 日志
+python-json-logger==2.0.7
+
+

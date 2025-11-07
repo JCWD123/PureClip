@@ -1,0 +1,17 @@
+{
+  "miniprogramRoot": "dist",
+  "projectname": "pureclip-watermark-remover",
+  "description": "PureClip去水印小程序",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": true,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": false
+  },
+  "compileType": "miniprogram"
+}
+
+

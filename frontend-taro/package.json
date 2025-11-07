@@ -1,0 +1,87 @@
+{
+  "name": "health-agent-taro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "健康档案助手 Taro多端应用",
+  "templateInfo": {
+    "name": "default",
+    "typescript": true,
+    "css": "sass"
+  },
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "build:swan": "taro build --type swan",
+    "build:alipay": "taro build --type alipay",
+    "build:tt": "taro build --type tt",
+    "build:h5": "taro build --type h5",
+    "build:rn": "taro build --type rn",
+    "build:qq": "taro build --type qq",
+    "build:jd": "taro build --type jd",
+    "build:quickapp": "taro build --type quickapp",
+    "dev:weapp": "pnpm build:weapp -- --watch",
+    "dev:swan": "pnpm build:swan -- --watch",
+    "dev:alipay": "pnpm build:alipay -- --watch",
+    "dev:tt": "pnpm build:tt -- --watch",
+    "dev:h5": "pnpm build:h5 -- --watch",
+    "dev:rn": "pnpm build:rn -- --watch",
+    "dev:qq": "pnpm build:qq -- --watch",
+    "dev:jd": "pnpm build:jd -- --watch",
+    "dev:quickapp": "pnpm build:quickapp -- --watch"
+  },
+  "browserslist": [
+    "last 3 versions",
+    "Android >= 4.1",
+    "ios >= 8"
+  ],
+  "author": "",
+  "dependencies": {
+    "@babel/runtime": "^7.24.0",
+    "@reduxjs/toolkit": "^2.2.5",
+    "@tarojs/components": "4.0.6",
+    "@tarojs/helper": "4.0.6",
+    "@tarojs/plugin-framework-react": "4.0.6",
+    "@tarojs/plugin-platform-alipay": "4.0.6",
+    "@tarojs/plugin-platform-h5": "4.0.6",
+    "@tarojs/plugin-platform-jd": "4.0.6",
+    "@tarojs/plugin-platform-qq": "4.0.6",
+    "@tarojs/plugin-platform-swan": "4.0.6",
+    "@tarojs/plugin-platform-tt": "4.0.6",
+    "@tarojs/plugin-platform-weapp": "4.0.6",
+    "@tarojs/react": "4.0.6",
+    "@tarojs/runtime": "4.0.6",
+    "@tarojs/shared": "4.0.6",
+    "@tarojs/taro": "4.0.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.1.2",
+    "taro-ui": "^3.2.1",
+    "dayjs": "^1.11.13"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-react": "^7.24.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
+    "@tarojs/cli": "4.0.6",
+    "@tarojs/taro-loader": "4.0.6",
+    "@tarojs/webpack5-runner": "4.0.6",
+    "@types/react": "^18.3.3",
+    "@types/webpack-env": "^1.18.4",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "babel-preset-taro": "4.0.6",
+    "eslint": "^8.57.0",
+    "eslint-config-taro": "4.0.6",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "postcss": "^8.4.38",
+    "react-refresh": "^0.14.0",
+    "stylelint": "^16.2.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.90.3"
+  }
+}
+
+
+
+

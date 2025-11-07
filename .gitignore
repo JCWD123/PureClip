@@ -1,0 +1,109 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Taro
+.temp/
+.rn_temp/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 配置文件（包含敏感信息）
+config/config.yaml
+.env
+.env.local
+.env.production
+
+# 临时文件
+/tmp/
+*.tmp
+*.log
+
+# 数据库
+*.db
+*.sqlite
+
+# MinIO数据
+/data/minio/
+
+# 备份文件
+*.bak
+backup/
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 系统文件
+Thumbs.db
+.DS_Store
+
+# 编译文件
+*.pyc
+*.pyo
+*.pyd
+
+
+
+# Standard Git Ignore Rules
+# Added by automated redirect script
+# IDE files
+.idea/
+.vscode/
+*.code-workspace
+# Python compiled files
+__pycache__/
+*.py[cod]
+*.pyd
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Log files
+logs/
+*.log
+# Environment variables
+.env
+.env.local
+.secret
+# OS generated files
+.DS_Store
+Thumbs.db
+# Coverage files
+.coverage
+htmlcov/

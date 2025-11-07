@@ -1,0 +1,254 @@
+# 健康档案助手 - Taro 多端版本
+
+> 基于 Taro 4.0 + React 18 + TypeScript 的多端应用，支持 H5、微信小程序、React Native 等平台。
+
+## ✨ 特性
+
+- 🚀 **Taro 4.0**：最新的 Taro 框架，性能更优
+- ⚛️ **React 18**：使用 React Hooks 开发
+- 💪 **TypeScript**：完整的类型支持
+- 📱 **多端支持**：一套代码编译到 H5、微信小程序、RN 等多个平台
+- 🎨 **Taro UI**：丰富的 UI 组件库
+- 🔥 **Redux Toolkit**：现代化的状态管理
+- 📦 **模块化设计**：清晰的项目结构
+
+## 📦 技术栈
+
+- **框架**: Taro 4.0 + React 18
+- **语言**: TypeScript
+- **状态管理**: Redux Toolkit
+- **样式**: Sass/SCSS
+- **UI组件**: Taro UI + 自定义组件
+- **包管理**: pnpm
+
+## 🚀 快速开始
+
+### 环境要求
+
+- Node.js >= 16
+- pnpm >= 8
+
+### 安装依赖
+
+```bash
+cd frontend-taro
+pnpm install
+```
+
+### 开发
+
+```bash
+# H5 开发（浏览器预览）
+pnpm dev:h5
+
+# 微信小程序开发
+pnpm dev:weapp
+# 然后使用微信开发者工具打开 dist 目录
+
+# 支付宝小程序
+pnpm dev:alipay
+
+# 字节跳动小程序
+pnpm dev:tt
+
+# QQ小程序
+pnpm dev:qq
+
+# React Native
+pnpm dev:rn
+```
+
+### 构建
+
+```bash
+# H5 构建
+pnpm build:h5
+
+# 微信小程序构建
+pnpm build:weapp
+
+# 其他平台构建
+pnpm build:alipay
+pnpm build:tt
+pnpm build:qq
+pnpm build:rn
+```
+
+## 📁 项目结构
+
+```
+frontend-taro/
+├── config/                 # Taro 配置
+│   ├── index.ts           # 主配置
+│   ├── dev.ts             # 开发环境配置
+│   └── prod.ts            # 生产环境配置
+├── src/
+│   ├── pages/             # 页面
+│   │   ├── profile/       # 用户档案页
+│   │   ├── persona/       # 人物风格页
+│   │   ├── rest/          # 作息提醒页
+│   │   ├── meal/          # 饮食提醒页
+│   │   ├── weather/       # 天气推送页
+│   │   └── health-tip/    # 养生妙招页
+│   ├── components/        # 公共组件
+│   ├── store/             # Redux 状态管理
+│   │   ├── index.ts
+│   │   └── userSlice.ts
+│   ├── services/          # API 服务
+│   │   └── api.ts
+│   ├── utils/             # 工具函数
+│   │   └── request.ts
+│   ├── types/             # TypeScript 类型定义
+│   ├── assets/            # 静态资源
+│   ├── app.tsx            # 应用入口
+│   ├── app.config.ts      # 应用配置（页面路由、tabBar等）
+│   └── app.scss           # 全局样式
+├── project.config.json    # 微信小程序配置
+├── package.json
+└── tsconfig.json
+```
+
+## 🔧 配置说明
+
+### 1. 修改 API 地址
+
+编辑 `src/utils/request.ts`：
+
+```typescript
+const API_BASE_URL = process.env.TARO_APP_API_URL || 'https://api.medai.medai-zjgsu.cn/api'
+```
+
+或在 `config/index.ts` 中配置环境变量：
+
+```typescript
+defineConstants: {
+  TARO_APP_API_URL: JSON.stringify('https://your-api.com/api')
+}
+```
+
+### 2. 修改小程序 AppID
+
+编辑 `project.config.json`：
+
+```json
+{
+  "appid": "your-appid-here"
+}
+```
+
+### 3. 添加新页面
+
+1. 在 `src/pages/` 下创建页面目录（如 `my-page/`）
+2. 创建 `index.tsx`、`index.scss`、`index.config.ts`
+3. 在 `src/app.config.ts` 中注册页面路由
+
+```typescript
+export default defineAppConfig({
+  pages: [
+    'pages/profile/index',
+    'pages/my-page/index'  // 新增页面
+  ]
+})
+```
+
+## 🎯 功能模块
+
+### 1. 用户档案管理
+- 基础信息录入（昵称、年龄、性别、身高、体重、血型）
+- 健康信息管理（生活习惯、过敏史、既往病史等）
+- 档案编辑与更新
+
+### 2. 人物风格选择
+- 多种推送风格（温柔美女、亲切妈妈、专业顾问等）
+- 风格预览与切换
+- 个性化推送体验
+
+### 3. 作息提醒
+- 早晨、中午、夜晚三个时间段提醒
+- 基于用户生活习惯的个性化建议
+- 历史记录查看
+
+### 4. 饮食提醒
+- 早餐、午餐、晚餐提醒
+- 根据健康档案推荐饮食
+- 忌口提示
+
+### 5. 天气推送
+- 实时天气信息爬取
+- 省市地区选择
+- 天气健康建议
+
+### 6. 养生妙招
+- 每日养生建议
+- 基于全量用户信息的个性化内容
+- 历史记录
+
+## 🔄 多端差异处理
+
+### H5端
+- 支持浏览器调试
+- 使用浏览器 localStorage
+- 开发便捷，适合快速迭代
+
+### 微信小程序
+- 需要配置 AppID
+- 注意请求域名白名单
+- 使用微信开发者工具调试
+
+### React Native
+- 需要配置原生环境（Android/iOS）
+- 性能接近原生应用
+- 适合对性能要求高的场景
+
+## 📚 学习资源
+
+- **从 uni-app 到 Taro 指南**: [UNI_TO_TARO_GUIDE.md](./UNI_TO_TARO_GUIDE.md)
+- **Taro 官方文档**: https://taro-docs.jd.com/
+- **React 官方文档**: https://react.dev/
+- **Taro UI 文档**: https://taro-ui.jd.com/
+
+## ⚠️ 注意事项
+
+1. **API 接口**：确保后端API地址配置正确
+2. **微信小程序**：需要在 `project.config.json` 中配置 AppID
+3. **H5跨域**：开发时可能需要配置代理解决跨域问题
+4. **样式单位**：使用 rpx 而非 px，确保多端适配
+5. **组件导入**：组件必须从 `@tarojs/components` 导入
+
+## 🐛 常见问题
+
+### Q1: 微信小程序编译报错？
+A: 检查是否正确安装了依赖，确保 `project.config.json` 配置正确。
+
+### Q2: H5 端请求失败？
+A: 检查 API 地址配置，开发环境可能需要配置 CORS 或代理。
+
+### Q3: 样式不生效？
+A: 确保使用 rpx 单位，检查是否正确导入了 scss 文件。
+
+### Q4: 组件找不到？
+A: 确保从 `@tarojs/components` 导入，如 `import { View } from '@tarojs/components'`
+
+## 📝 开发规范
+
+- 使用 TypeScript 编写代码
+- 组件命名使用 PascalCase
+- 文件命名使用 kebab-case
+- 使用 ESLint 和 Prettier 保持代码风格一致
+- 提交代码前确保没有 lint 错误
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 License
+
+MIT
+
+---
+
+Made with ❤️ by Health Agent Team
+
+
+
+
