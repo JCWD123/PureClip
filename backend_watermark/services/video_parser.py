@@ -176,13 +176,54 @@ class VideoParser:
         Returns:
             标准化的解析结果
         """
-        # iiilab API响应格式
-        # 成功: {"code": 200, "message": "success", "data": {...}}
-        # 失败: {"code": xxx, "message": "error message"}
+        # iiilab API 实际响应格式（根据真实日志）
+        # 成功: {"text": "标题", "medias": [{"media_type": "video", "resource_url": "...", "preview_url": "..."}], "overseas": 0}
+        # 或旧格式: {"code": 200, "message": "success", "data": {...}}
         
         logger.info(f"API响应数据: {data}")
         
-        if data.get('code') == 200:
+        # 格式1: iiilab 新格式（实际使用的格式）
+        if 'medias' in data and isinstance(data['medias'], list) and len(data['medias']) > 0:
+            medias = data['medias']
+            video_media = None
+            
+            # 查找视频类型的media
+            for media in medias:
+                if media.get('media_type') == 'video':
+                    video_media = media
+                    break
+            
+            # 如果没找到视频，取第一个
+            if not video_media and len(medias) > 0:
+                video_media = medias[0]
+            
+            if video_media and video_media.get('resource_url'):
+                video_url = video_media['resource_url']
+                logger.info(f"✅ 从medias中提取到视频URL: {video_url[:100]}...")
+                
+                return {
+                    'success': True,
+                    'video_url': video_url,
+                    'title': data.get('text') or data.get('title'),
+                    'cover': video_media.get('preview_url') or video_media.get('cover'),
+                    'author': data.get('author') or data.get('nickname'),
+                    'platform': platform,
+                    'error': None
+                }
+            else:
+                logger.warning(f"medias中未找到有效的视频URL，响应数据: {video_media}")
+                return {
+                    'success': False,
+                    'video_url': None,
+                    'title': None,
+                    'cover': None,
+                    'author': None,
+                    'platform': platform,
+                    'error': 'medias中未找到视频URL'
+                }
+        
+        # 格式2: 标准格式（code=200）
+        elif data.get('code') == 200:
             video_data = data.get('data', {})
             
             # iiilab 可能返回多个视频，取第一个
@@ -195,7 +236,8 @@ class VideoParser:
                 video_data.get('video_url') or 
                 video_data.get('play') or 
                 video_data.get('videoUrl') or
-                video_data.get('playUrl')
+                video_data.get('playUrl') or
+                video_data.get('resource_url')
             )
             
             if not video_url:
@@ -213,15 +255,17 @@ class VideoParser:
             return {
                 'success': True,
                 'video_url': video_url,
-                'title': video_data.get('title') or video_data.get('desc'),
+                'title': video_data.get('title') or video_data.get('desc') or video_data.get('text'),
                 'cover': video_data.get('cover') or video_data.get('thumbnail') or video_data.get('coverUrl'),
                 'author': video_data.get('author') or video_data.get('nickname') or video_data.get('authorName'),
                 'platform': platform,
                 'error': None
             }
+        
+        # 格式3: 错误响应
         else:
-            error_msg = data.get('message') or data.get('msg') or '解析失败'
-            logger.error(f"API解析失败: {error_msg}")
+            error_msg = data.get('message') or data.get('msg') or data.get('error') or '解析失败'
+            logger.error(f"API解析失败: {error_msg}，响应数据: {data}")
             return {
                 'success': False,
                 'video_url': None,
