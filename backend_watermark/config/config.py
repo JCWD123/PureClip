@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     TIMEOUT_PROCESS: int = yaml_config["timeout"]["process"]
     TIMEOUT_UPLOAD: int = yaml_config["timeout"]["upload"]
     
+    # 视频解析API配置
+    IIILAB_CLIENT_ID: str = yaml_config["video_parser"]["iiilab"]["client_id"]
+    IIILAB_CLIENT_SECRET: str = yaml_config["video_parser"]["iiilab"]["client_secret"]
+    IIILAB_API_URL: str = yaml_config["video_parser"]["iiilab"]["api_url"]
+    IIILAB_TIMEOUT: int = yaml_config["video_parser"]["iiilab"]["timeout"]
+    
     # JWT配置（用于用户认证）
     SECRET_KEY: str = "pureclip-secret-key-change-in-production"
     ALGORITHM: str = "HS256"

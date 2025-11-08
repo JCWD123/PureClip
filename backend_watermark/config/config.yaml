@@ -73,4 +73,12 @@ timeout:
   process: 600   # 处理超时
   upload: 300    # 上传超时
 
+# 视频解析API配置
+video_parser:
+  iiilab:
+    client_id: "cbc1e14780805f6g"
+    client_secret: "78697150850ba00a3c362c40733b553"
+    api_url: "https://service.iiilab.com/openapi/extract"
+    timeout: 30
+
 

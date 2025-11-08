@@ -9,6 +9,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# 延迟导入避免循环依赖
+def get_video_parser():
+    """延迟导入VideoParser"""
+    from backend_watermark.services.video_parser import get_video_parser as _get_parser
+    return _get_parser()
+
 
 class Downloader:
     """文件下载器"""
@@ -59,10 +65,10 @@ class Downloader:
     
     def download(self, url: str, media_type: str) -> str:
         """
-        下载文件（支持浏览器伪装和自动跟随重定向）
+        下载文件（支持URL解析、浏览器伪装和自动跟随重定向）
         
         Args:
-            url: 文件URL
+            url: 文件URL或短链
             media_type: 媒体类型
             
         Returns:
@@ -71,7 +77,13 @@ class Downloader:
         logger.info(f"开始下载文件: {url}")
         
         try:
-            # 获取浏览器请求头
+            # 步骤1: 尝试解析URL（针对短链和平台链接）
+            parsed_url = self._parse_video_url(url, media_type)
+            if parsed_url and parsed_url != url:
+                logger.info(f"URL解析成功，使用解析后的地址: {parsed_url}")
+                url = parsed_url
+            
+            # 步骤2: 获取浏览器请求头
             headers = self._get_browser_headers(url)
             
             # 发送请求（自动跟随重定向）
@@ -100,6 +112,12 @@ class Downloader:
                 # 记录响应内容的前200字节用于调试
                 response_preview = response.content[:200] if len(response.content) > 0 else b""
                 logger.warning(f"响应预览: {response_preview}")
+                
+                # 检测是否为验证码页面
+                if self._is_captcha_page(final_url, response.content):
+                    error_msg = self._get_captcha_error_message(final_url)
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
             
             ext = self._get_file_extension(content_type, media_type)
             
@@ -126,6 +144,118 @@ class Downloader:
         except Exception as e:
             logger.error(f"文件下载失败: {e}")
             raise Exception(f"下载失败: {str(e)}")
+    
+    def _parse_video_url(self, url: str, media_type: str) -> str:
+        """
+        解析视频URL（针对短链和平台链接）
+        
+        Args:
+            url: 原始URL
+            media_type: 媒体类型
+            
+        Returns:
+            解析后的真实URL
+        """
+        # 只对视频类型尝试解析
+        if media_type != MediaType.VIDEO.value:
+            return url
+        
+        try:
+            # 检测是否需要解析
+            needs_parse = any([
+                'mr.baidu.com' in url,
+                'v.douyin.com' in url,
+                'xhslink.com' in url,
+                'b23.tv' in url,
+                '/share' in url.lower(),
+                '/r/' in url
+            ])
+            
+            if not needs_parse:
+                logger.info("URL无需解析，直接下载")
+                return url
+            
+            # 使用视频解析器
+            logger.info("检测到短链或平台链接，尝试解析...")
+            parser = get_video_parser()
+            result = parser.parse(url)
+            
+            if result['success'] and result['video_url']:
+                logger.info(f"视频解析成功: {result.get('title', 'Unknown')}")
+                logger.info(f"作者: {result.get('author', 'Unknown')}")
+                logger.info(f"平台: {result.get('platform', 'Unknown')}")
+                return result['video_url']
+            else:
+                logger.warning(f"视频解析失败: {result.get('error', 'Unknown')}")
+                return url
+                
+        except Exception as e:
+            logger.warning(f"URL解析异常: {e}，将使用原始URL")
+            return url
+    
+    def _is_captcha_page(self, url: str, content: bytes) -> bool:
+        """
+        检测是否为验证码页面
+        
+        Args:
+            url: 最终URL
+            content: 响应内容
+            
+        Returns:
+            是否为验证码页面
+        """
+        # 检查URL中的验证码关键词
+        captcha_url_patterns = [
+            'captcha', 'verify', 'tuxing', 'slider', 
+            'wappass.baidu.com', 'verify.snssdk.com'
+        ]
+        
+        url_lower = url.lower()
+        if any(pattern in url_lower for pattern in captcha_url_patterns):
+            return True
+        
+        # 检查响应内容中的验证码关键词
+        try:
+            content_str = content[:1000].decode('utf-8', errors='ignore').lower()
+            captcha_content_patterns = [
+                '安全验证', '验证码', 'captcha', '人机验证',
+                'security verification', '滑动验证'
+            ]
+            if any(pattern in content_str for pattern in captcha_content_patterns):
+                return True
+        except:
+            pass
+        
+        return False
+    
+    def _get_captcha_error_message(self, url: str) -> str:
+        """
+        生成验证码错误消息
+        
+        Args:
+            url: 验证码页面URL
+            
+        Returns:
+            错误消息
+        """
+        platform = ""
+        if 'baidu.com' in url:
+            platform = "百度"
+        elif 'douyin.com' in url or 'snssdk.com' in url:
+            platform = "抖音"
+        elif 'xiaohongshu.com' in url or 'xhslink.com' in url:
+            platform = "小红书"
+        else:
+            platform = "该平台"
+        
+        return (
+            f"❌ {platform}链接需要人机验证，无法直接下载。\n"
+            f"建议：\n"
+            f"1. 在浏览器中打开该链接，完成验证后获取真实的视频URL\n"
+            f"2. 使用其他平台的公开视频链接\n"
+            f"3. 如果是{platform}APP分享的链接，请尝试获取原始视频地址\n"
+            f"验证码页面: {url[:100]}..."
+        )
     
     def _is_valid_media_content(self, content_type: str, media_type: str) -> bool:
         """
