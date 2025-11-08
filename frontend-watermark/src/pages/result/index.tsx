@@ -9,6 +9,7 @@ export default function Result() {
   const { taskId } = router.params
   const [task, setTask] = useState<any>(null)
   const [polling, setPolling] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     if (taskId) {
@@ -47,26 +48,101 @@ export default function Result() {
         success: () => {
           Taro.showToast({
             title: '链接已复制',
-            icon: 'success'
+            icon: 'success',
+            duration: 2000
+          })
+        },
+        fail: () => {
+          Taro.showToast({
+            title: '复制失败',
+            icon: 'error'
           })
         }
       })
     }
   }
 
-  const handleDownload = () => {
-    if (task?.result_url) {
-      Taro.downloadFile({
-        url: task.result_url,
-        success: (res) => {
-          if (res.statusCode === 200) {
-            Taro.showToast({
-              title: '下载成功',
-              icon: 'success'
-            })
-          }
-        }
+  const handleDownload = async () => {
+    if (!task?.result_url) {
+      Taro.showToast({
+        title: '暂无可下载内容',
+        icon: 'none'
       })
+      return
+    }
+
+    if (downloading) {
+      return // 防止重复点击
+    }
+
+    setDownloading(true)
+
+    try {
+      // 判断是视频还是图片
+      const isVideo = task.result_url.includes('.mp4') || task.result_url.includes('video')
+
+      Taro.showLoading({
+        title: '准备下载...',
+        mask: true
+      })
+
+      // 步骤1: 下载文件到本地临时目录
+      const downloadResult = await Taro.downloadFile({
+        url: task.result_url
+      })
+
+      if (downloadResult.statusCode !== 200) {
+        throw new Error('下载失败')
+      }
+
+      Taro.showLoading({
+        title: '保存中...',
+        mask: true
+      })
+
+      // 步骤2: 保存到相册
+      if (isVideo) {
+        await Taro.saveVideoToPhotosAlbum({
+          filePath: downloadResult.tempFilePath
+        })
+      } else {
+        await Taro.saveImageToPhotosAlbum({
+          filePath: downloadResult.tempFilePath
+        })
+      }
+
+      Taro.hideLoading()
+      
+      Taro.showModal({
+        title: '保存成功',
+        content: `${isVideo ? '视频' : '图片'}已保存到相册`,
+        showCancel: false,
+        confirmText: '好的'
+      })
+    } catch (error: any) {
+      Taro.hideLoading()
+      
+      // 处理用户拒绝授权的情况
+      if (error.errMsg && error.errMsg.includes('auth')) {
+        Taro.showModal({
+          title: '需要相册权限',
+          content: '请在设置中允许访问相册',
+          confirmText: '去设置',
+          success: (res) => {
+            if (res.confirm) {
+              Taro.openSetting()
+            }
+          }
+        })
+      } else {
+        Taro.showToast({
+          title: error.errMsg || '保存失败',
+          icon: 'none',
+          duration: 2000
+        })
+      }
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -108,71 +184,128 @@ export default function Result() {
 
   return (
     <View className='result-page'>
-      <View className='status-card'>
-        <View className='status-header'>
-          <View className='status-icon' style={{ background: getStatusColor(task.status) }}>
-            {task.status === 'completed' ? '✓' : task.status === 'failed' ? '✗' : '⟳'}
+      {/* 处理中状态 */}
+      {task.status !== 'completed' && task.status !== 'failed' && (
+        <View className='processing-container'>
+          <View className='processing-icon'>
+            <View className='spinner' />
           </View>
-          <View className='status-text'>{getStatusText(task.status)}</View>
-        </View>
-
-        {task.status !== 'completed' && task.status !== 'failed' && (
+          <View className='processing-title'>{getStatusText(task.status)}</View>
           <View className='progress-container'>
             <View className='progress-bar'>
               <View
                 className='progress-fill'
-                style={{ width: `${task.progress}%` }}
+                style={{ width: `${task.progress}%`, background: getStatusColor(task.status) }}
               />
             </View>
             <View className='progress-text'>{task.progress}%</View>
           </View>
-        )}
-
-        {task.error_message && (
-          <View className='error-message'>
-            <View className='error-icon'>⚠️</View>
-            <View className='error-text'>{task.error_message}</View>
-          </View>
-        )}
-      </View>
-
-      {task.status === 'completed' && task.result_url && (
-        <View className='result-container'>
-          <View className='result-title'>处理结果</View>
-          
-          <View className='preview-container'>
-            {task.result_url.includes('.mp4') || task.result_url.includes('video') ? (
-              <Video
-                className='video-preview'
-                src={task.result_url}
-                controls
-                showCenterPlayBtn
-              />
-            ) : (
-              <Image
-                className='image-preview'
-                src={task.result_url}
-                mode='aspectFit'
-              />
-            )}
-          </View>
-
-          <View className='action-buttons'>
-            <Button className='action-btn primary' onClick={handleCopyUrl}>
-              复制链接
-            </Button>
-            <Button className='action-btn secondary' onClick={handleDownload}>
-              下载文件
-            </Button>
-          </View>
+          <View className='processing-tip'>请稍候，正在为您处理...</View>
         </View>
       )}
 
-      <View className='bottom-actions'>
-        <Button className='back-btn' onClick={handleBackHome}>
-          返回首页
-        </Button>
-      </View>
+      {/* 失败状态 */}
+      {task.status === 'failed' && (
+        <View className='error-container'>
+          <View className='error-icon-large'>✗</View>
+          <View className='error-title'>处理失败</View>
+          <View className='error-detail'>{task.error_message || '处理过程中出现错误'}</View>
+          <Button className='retry-btn' onClick={handleBackHome}>
+            重新尝试
+          </Button>
+        </View>
+      )}
+
+      {/* 成功状态 */}
+      {task.status === 'completed' && task.result_url && (
+        <View className='success-container'>
+          {/* 成功提示 */}
+          <View className='success-header'>
+            <View className='success-icon'>✓</View>
+            <View className='success-title'>处理完成</View>
+          </View>
+
+          {/* 视频预览 */}
+          <View className='video-section'>
+            <View className='section-label'>视频</View>
+            <View className='video-wrapper'>
+              {task.result_url.includes('.mp4') || task.result_url.includes('video') ? (
+                <Video
+                  className='video-player'
+                  src={task.result_url}
+                  controls
+                  showCenterPlayBtn
+                  objectFit='contain'
+                  enableProgressGesture
+                  showProgress
+                  showPlayBtn
+                  showFullscreenBtn
+                />
+              ) : (
+                <Image
+                  className='image-preview'
+                  src={task.result_url}
+                  mode='aspectFit'
+                />
+              )}
+            </View>
+          </View>
+
+          {/* 视频信息 */}
+          {task.metadata && (
+            <View className='info-section'>
+              <View className='info-row'>
+                <View className='info-label'>时长：</View>
+                <View className='info-value'>
+                  {task.metadata.duration ? `${task.metadata.duration}秒` : '未知'}
+                </View>
+              </View>
+              <View className='info-row'>
+                <View className='info-label'>分辨率：</View>
+                <View className='info-value'>
+                  {task.metadata.width && task.metadata.height 
+                    ? `${task.metadata.width}x${task.metadata.height}`
+                    : '未知'}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* 操作按钮 */}
+          <View className='action-section'>
+            <Button 
+              className='action-btn copy-btn' 
+              onClick={handleCopyUrl}
+            >
+              复制链接
+            </Button>
+            <Button 
+              className='action-btn download-btn' 
+              onClick={handleDownload}
+              disabled={downloading}
+              loading={downloading}
+            >
+              {downloading ? '保存中...' : '下载视频'}
+            </Button>
+          </View>
+
+          {/* 底部提示 */}
+          <View className='bottom-tip'>
+            下载失败？<View className='link-text' onClick={() => {
+              Taro.showModal({
+                title: '解决方案',
+                content: '1. 请确保已授权相册权限\n2. 检查网络连接\n3. 尝试复制链接后在浏览器中打开',
+                showCancel: false
+              })
+            }}>点我查看解决方案</View>
+          </View>
+
+          {/* 返回按钮 */}
+          <Button className='back-home-btn' onClick={handleBackHome}>
+            返回首页
+          </Button>
+        </View>
+      )}
     </View>
   )
 }
