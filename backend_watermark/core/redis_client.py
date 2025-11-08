@@ -4,6 +4,7 @@ from backend_watermark.config.config import settings
 import logging
 import json
 from typing import Any, Optional
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,9 @@ class RedisClient:
         if self.client is None:
             self.connect()
         try:
-            self.client.set(key, json.dumps(value), ex=expire)
+            # 处理datetime对象
+            serialized_value = json.dumps(value, default=self._json_serializer)
+            self.client.set(key, serialized_value, ex=expire)
         except Exception as e:
             logger.error(f"Redis设置失败: {e}")
     
@@ -77,6 +80,13 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Redis检查失败: {e}")
             return False
+    
+    @staticmethod
+    def _json_serializer(obj):
+        """JSON序列化器，处理datetime对象"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Type {type(obj)} not serializable")
 
 
 # 全局Redis实例
