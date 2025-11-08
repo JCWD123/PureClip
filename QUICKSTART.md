@@ -93,7 +93,7 @@ minio.exe server C:\minio\data --console-address ":9001"
 
 **Linux/macOS:**
 ```bash
-cd backend-watermark
+cd backend_watermark
 
 # 安装依赖（首次运行）
 python3 -m venv venv
@@ -123,7 +123,7 @@ start_backend.bat
 
 **Linux/macOS:**
 ```bash
-cd backend-watermark
+cd backend_watermark
 source venv/bin/activate
 ./start_celery.sh
 ```
@@ -264,7 +264,7 @@ server:
 export const API_BASE_URL = 'http://localhost:8001/api'
 
 // 生产环境
-// export const API_BASE_URL = 'https://api.pureclip.com/api'
+// export const API_BASE_URL = 'https://api.pureclip.arbismart.cloud/api'
 ```
 
 ## 📱 微信小程序配置
@@ -382,5 +382,6 @@ brew install ffmpeg
 🎉 恭喜！你已经成功启动 PureClip 去水印系统！
 
 现在可以开始处理你的第一个视频或图片了。
+
 
 

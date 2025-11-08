@@ -1,0 +1,76 @@
+# MongoDB配置
+mongodb:
+  uri: "mongodb://root:Jchmy2025@dds-bp13820d540de8541179-pub.mongodb.rds.aliyuncs.com:3717/admin"
+  database: "pureclip"
+  collection_tasks: "watermark_tasks"
+  collection_history: "process_history"
+
+# Redis配置
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
+
+# MinIO对象存储配置
+minio:
+  endpoint: "localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  bucket_name: "pureclip"
+  secure: false
+
+# Celery配置
+celery:
+  broker_url: "redis://localhost:6379/1"
+  result_backend: "redis://localhost:6379/2"
+  task_serializer: "json"
+  result_serializer: "json"
+  accept_content: ["json"]
+  timezone: "Asia/Shanghai"
+  enable_utc: true
+
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8001
+  debug: true
+
+# 视频处理配置
+video:
+  max_size_mb: 500  # 最大视频大小（MB）
+  max_duration_seconds: 600  # 最大视频时长（秒）
+  output_format: "mp4"
+  temp_dir: "/tmp/pureclip"  # 临时文件目录
+
+# 图片处理配置
+image:
+  max_size_mb: 20  # 最大图片大小（MB）
+  output_format: "jpg"
+  quality: 95
+
+# 去水印方法配置
+watermark:
+  methods:
+    crop:
+      enabled: true
+      description: "裁剪：去掉视频边角的水印区域"
+    blur:
+      enabled: true
+      description: "模糊：高斯模糊水印区域"
+      kernel_size: 25
+    cover:
+      enabled: true
+      description: "覆盖：用背景颜色或局部像素平均覆盖"
+    inpaint:
+      enabled: true
+      description: "填充：用OpenCV修补小范围水印"
+      inpaint_radius: 3
+
+# 任务超时配置（秒）
+timeout:
+  download: 300  # 下载超时
+  process: 600   # 处理超时
+  upload: 300    # 上传超时
+
+

@@ -168,7 +168,7 @@ git clone https://github.com/yourname/pureclip.git .
 #### 3.3 安装Python依赖
 
 ```bash
-cd backend-watermark
+cd backend_watermark
 
 # 创建虚拟环境
 python3 -m venv venv
@@ -426,7 +426,7 @@ services:
     command: server /data --console-address ":9001"
 
   api:
-    build: ./backend-watermark
+    build: backend_watermark
     container_name: pureclip-api
     restart: always
     ports:
@@ -438,11 +438,11 @@ services:
     environment:
       PYTHONPATH: /app
     volumes:
-      - ./backend-watermark:/app
+      - ./backend_watermark:/app
       - /tmp/pureclip:/tmp/pureclip
 
   celery:
-    build: ./backend-watermark
+    build: backend_watermark
     container_name: pureclip-celery
     restart: always
     depends_on:
@@ -452,7 +452,7 @@ services:
     environment:
       PYTHONPATH: /app
     volumes:
-      - ./backend-watermark:/app
+      - ./backend_watermark:/app
       - /tmp/pureclip:/tmp/pureclip
     command: celery -A backend_watermark.celery_app.celery worker --loglevel=info
 
@@ -538,7 +538,7 @@ cd /opt/pureclip
 git pull
 
 # 更新依赖
-cd backend-watermark
+cd backend_watermark
 source venv/bin/activate
 pip install -r requirements.txt
 
@@ -564,7 +564,7 @@ sudo journalctl -u pureclip-celery -n 100
 sudo netstat -tlnp | grep :8001
 
 # 测试配置
-cd /opt/pureclip/backend-watermark
+cd /opt/pureclip/backend_watermark
 source venv/bin/activate
 python app.py
 ```
@@ -592,5 +592,6 @@ redis-cli ping
 ---
 
 如有问题，请查看 [FAQ](README.md#常见问题) 或提交 Issue。
+
 
 

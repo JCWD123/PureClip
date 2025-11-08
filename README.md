@@ -79,7 +79,7 @@ PureClip/
 #### 1.1 安装依赖
 
 ```bash
-cd backend-watermark
+cd backend_watermark
 pip install -r requirements.txt
 ```
 
@@ -316,5 +316,6 @@ MIT License
 ---
 
 **注意**: 本项目仅供学习交流使用，请勿用于商业用途或侵犯他人版权。
+
 
 

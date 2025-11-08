@@ -378,7 +378,7 @@ export const API_BASE_URL = 'API服务地址'
 
 ### 后端测试
 ```bash
-cd backend-watermark
+cd backend_watermark
 pytest tests/
 ```
 
@@ -453,5 +453,6 @@ server:
 **文档版本**: 1.0.0  
 **最后更新**: 2025-11-06  
 **维护者**: PureClip Team
+
 
 
