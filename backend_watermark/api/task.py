@@ -9,6 +9,7 @@ from backend_watermark.models.task import (
 from backend_watermark.core.mongodb import get_mongodb
 from backend_watermark.core.redis_client import get_redis
 from backend_watermark.celery_app.tasks import process_watermark_task
+from backend_watermark.utils.url_extractor import extract_url, is_valid_url
 from datetime import datetime
 import uuid
 import logging
@@ -22,13 +23,31 @@ async def create_task(task: TaskCreate):
     """
     创建去水印任务
     
-    - **url**: 视频或图片URL
+    - **url**: 视频或图片URL（支持从复制的文本中自动提取URL）
     - **media_type**: 媒体类型（video/image）
     - **method**: 去水印方法（crop/blur/cover/inpaint）
     - **watermark_region**: 水印区域坐标（可选）
     - **user_id**: 用户ID（可选）
     """
     try:
+        # 从输入文本中提取URL
+        extracted_url = extract_url(task.url)
+        
+        if not extracted_url:
+            raise HTTPException(
+                status_code=400, 
+                detail="无法从输入文本中提取有效的URL，请确保包含完整的http://或https://链接"
+            )
+        
+        # 验证URL格式
+        if not is_valid_url(extracted_url):
+            raise HTTPException(
+                status_code=400,
+                detail=f"提取的URL格式无效: {extracted_url}"
+            )
+        
+        logger.info(f"提取的URL: {extracted_url}")
+        
         # 生成任务ID
         task_id = str(uuid.uuid4())
         
@@ -36,7 +55,8 @@ async def create_task(task: TaskCreate):
         task_data = {
             "task_id": task_id,
             "user_id": task.user_id,
-            "url": task.url,
+            "url": extracted_url,  # 使用提取后的URL
+            "original_input": task.url,  # 保存原始输入
             "media_type": task.media_type.value,
             "method": task.method.value,
             "watermark_region": task.watermark_region,
