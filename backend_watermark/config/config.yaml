@@ -77,7 +77,7 @@ timeout:
 video_parser:
   iiilab:
     client_id: "cbc1e14780805f6g"
-    client_secret: "78697150850ba00a3c362c40733b553"
+    client_secret: "78697150850ba00a3c362c40733b5532"
     api_url: "https://service.iiilab.com/openapi/extract"
     timeout: 30
 
