@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: str = yaml_config["minio"]["secret_key"]
     MINIO_BUCKET_NAME: str = yaml_config["minio"]["bucket_name"]
     MINIO_SECURE: bool = yaml_config["minio"]["secure"]
+    MINIO_PUBLIC_URL: str = yaml_config["minio"].get("public_url", "")
     
     # Celery配置
     CELERY_BROKER_URL: str = yaml_config["celery"]["broker_url"]

@@ -14,11 +14,12 @@ redis:
 
 # MinIO对象存储配置
 minio:
-  endpoint: "localhost:9000"
+  endpoint: "localhost:9000"  # 后端内网连接（不要改）
   access_key: "minioadmin"
   secret_key: "minioadmin"
   bucket_name: "pureclip"
-  secure: false
+  secure: false  # 内网连接不需要SSL
+  public_url: "https://api.pureclip.arbismart.cloud/storage"  # 公开访问URL（返回给前端）
 
 # Celery配置
 celery:

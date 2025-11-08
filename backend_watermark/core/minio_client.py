@@ -60,11 +60,43 @@ class MinioClient:
                 expires=timedelta(days=7)
             )
             
+            # 如果配置了公开URL，替换endpoint
+            if settings.MINIO_PUBLIC_URL:
+                url = self._replace_with_public_url(url, object_name)
+            
             logger.info(f"文件上传成功: {object_name}")
+            logger.info(f"访问URL: {url}")
             return url
         except S3Error as e:
             logger.error(f"文件上传失败: {e}")
             raise
+    
+    def _replace_with_public_url(self, presigned_url: str, object_name: str) -> str:
+        """
+        将MinIO生成的URL替换为公开访问URL
+        
+        Args:
+            presigned_url: MinIO生成的预签名URL
+            object_name: 对象名称
+            
+        Returns:
+            公开访问URL
+        """
+        # 从presigned_url中提取查询参数
+        from urllib.parse import urlparse, parse_qs, urlencode
+        
+        parsed = urlparse(presigned_url)
+        query_params = parse_qs(parsed.query)
+        
+        # 构建新的URL
+        public_url = f"{settings.MINIO_PUBLIC_URL}/{settings.MINIO_BUCKET_NAME}/{object_name}"
+        
+        # 添加查询参数
+        if query_params:
+            query_string = urlencode({k: v[0] for k, v in query_params.items()})
+            public_url = f"{public_url}?{query_string}"
+        
+        return public_url
     
     def download_file(self, object_name: str, file_path: str):
         """
