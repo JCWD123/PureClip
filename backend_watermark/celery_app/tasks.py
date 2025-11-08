@@ -154,9 +154,10 @@ def update_task_status(
         {"$set": update_data}
     )
     
-    # 更新Redis缓存
+    # 更新Redis缓存（排除_id字段）
     task = collection.find_one({"task_id": task_id}, {"_id": 0})
-    redis.set(f"task:{task_id}", task, expire=3600 * 24)
+    if task:
+        redis.set(f"task:{task_id}", task, expire=3600 * 24)
     
     logger.info(f"任务状态更新: {task_id} -> {status.value}")
 

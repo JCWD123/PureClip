@@ -5,6 +5,7 @@ import logging
 import json
 from typing import Any, Optional
 from datetime import datetime
+from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,11 @@ class RedisClient:
     
     @staticmethod
     def _json_serializer(obj):
-        """JSON序列化器，处理datetime对象"""
+        """JSON序列化器，处理datetime和ObjectId对象"""
         if isinstance(obj, datetime):
             return obj.isoformat()
+        if isinstance(obj, ObjectId):
+            return str(obj)
         raise TypeError(f"Type {type(obj)} not serializable")
 
 

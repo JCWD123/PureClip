@@ -53,11 +53,12 @@ async def create_task(task: TaskCreate):
         # 存入MongoDB
         db = get_mongodb()
         collection = db.get_collection("watermark_tasks")
-        collection.insert_one(task_data)
+        result = collection.insert_one(task_data)
         
-        # 缓存到Redis（快速查询）
+        # 缓存到Redis（快速查询，排除MongoDB的_id）
         redis = get_redis()
-        redis.set(f"task:{task_id}", task_data, expire=3600 * 24)  # 24小时过期
+        cache_data = {k: v for k, v in task_data.items() if k != '_id'}
+        redis.set(f"task:{task_id}", cache_data, expire=3600 * 24)  # 24小时过期
         
         # 提交Celery任务
         process_watermark_task.delay(task_id)
