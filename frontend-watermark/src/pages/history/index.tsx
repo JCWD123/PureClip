@@ -73,7 +73,8 @@ export default function History() {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
   }
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '无需下载'
     if (bytes < 1024) return bytes + ' B'
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
@@ -84,7 +85,8 @@ export default function History() {
       crop: '裁剪',
       blur: '模糊',
       cover: '覆盖',
-      inpaint: '填充'
+      inpaint: '填充',
+      parse: '链接解析'
     }
     return methodMap[method] || method
   }
@@ -114,8 +116,22 @@ export default function History() {
     )
   }
 
+  const handleGoToProfile = () => {
+    Taro.navigateTo({
+      url: '/pages/profile/index'
+    })
+  }
+
   return (
     <View className='history-page'>
+      {/* 顶部工具栏 */}
+      <View className='toolbar'>
+        <View className='toolbar-title'>解析记录</View>
+        <View className='toolbar-btn' onClick={handleGoToProfile}>
+          我的 ›
+        </View>
+      </View>
+
       <ScrollView scrollY className='history-list'>
         {historyList.map((item) => (
           <View key={item.history_id} className='history-item'>
@@ -127,14 +143,34 @@ export default function History() {
             </View>
 
             <View className='item-info'>
+              {item.metadata?.title && (
+                <View className='info-row'>
+                  <View className='info-label'>标题：</View>
+                  <View className='info-value'>{item.metadata.title}</View>
+                </View>
+              )}
+              {item.metadata?.author && (
+                <View className='info-row'>
+                  <View className='info-label'>作者：</View>
+                  <View className='info-value'>{item.metadata.author}</View>
+                </View>
+              )}
+              {item.metadata?.platform && (
+                <View className='info-row'>
+                  <View className='info-label'>平台：</View>
+                  <View className='info-value'>{item.metadata.platform}</View>
+                </View>
+              )}
               <View className='info-row'>
                 <View className='info-label'>处理时间：</View>
                 <View className='info-value'>{formatDate(item.created_at)}</View>
               </View>
-              <View className='info-row'>
-                <View className='info-label'>文件大小：</View>
-                <View className='info-value'>{formatFileSize(item.file_size)}</View>
-              </View>
+              {item.file_size && (
+                <View className='info-row'>
+                  <View className='info-label'>文件大小：</View>
+                  <View className='info-value'>{formatFileSize(item.file_size)}</View>
+                </View>
+              )}
               <View className='info-row'>
                 <View className='info-label'>耗时：</View>
                 <View className='info-value'>{item.process_time.toFixed(2)}秒</View>

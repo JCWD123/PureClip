@@ -6,12 +6,6 @@ echo "🚀 PureClip - 轻量级模式部署（手动模式）"
 echo "==========================================="
 echo ""
 
-# 检查是否在 PureClip 虚拟环境中
-if [[ "$CONDA_DEFAULT_ENV" != "PureClip" ]]; then
-    echo "❌ 请先激活 PureClip 虚拟环境"
-    echo "   运行: conda activate PureClip"
-    exit 1
-fi
 
 echo "📋 更新内容："
 echo "  ✅ 从重型模式改为轻量级模式"

@@ -27,6 +27,7 @@ class WatermarkMethod(str, Enum):
     BLUR = "blur"  # 模糊
     COVER = "cover"  # 覆盖
     INPAINT = "inpaint"  # 填充
+    PARSE = "parse"  # 解析模式（轻量级，直接返回URL）
 
 
 class TaskCreate(BaseModel):
@@ -80,7 +81,8 @@ class ProcessHistory(BaseModel):
     media_type: MediaType = Field(..., description="媒体类型")
     method: WatermarkMethod = Field(..., description="使用的方法")
     process_time: float = Field(..., description="处理耗时（秒）")
-    file_size: int = Field(..., description="文件大小（字节）")
+    file_size: Optional[int] = Field(None, description="文件大小（字节）- 轻量级模式下为空")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="视频元数据（标题、作者等）")
     created_at: datetime = Field(default_factory=datetime.now)
 
 

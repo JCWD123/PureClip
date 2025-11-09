@@ -2,7 +2,8 @@ export default {
   pages: [
     'pages/index/index',
     'pages/history/index',
-    'pages/result/index'
+    'pages/result/index',
+    'pages/profile/index'
   ],
   window: {
     backgroundTextStyle: 'light',
@@ -12,7 +13,7 @@ export default {
   },
   tabBar: {
     color: '#666',
-    selectedColor: '#1890ff',
+    selectedColor: '#667eea',
     backgroundColor: '#fff',
     borderStyle: 'black',
     list: [
@@ -24,7 +25,7 @@ export default {
       },
       {
         pagePath: 'pages/history/index',
-        text: '历史记录',
+        text: '历史',
         iconPath: 'assets/icons/history.png',
         selectedIconPath: 'assets/icons/history-active.png'
       }

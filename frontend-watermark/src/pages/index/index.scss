@@ -1,21 +1,26 @@
 .index-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   padding: 40px 20px;
 
   .header {
     text-align: center;
-    color: #fff;
+    color: #333;
     margin-bottom: 40px;
 
     .title {
       font-size: 36px;
       font-weight: bold;
       margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
       font-size: 16px;
+      color: #666;
       opacity: 0.9;
     }
   }
@@ -103,10 +108,16 @@
     display: flex;
     justify-content: space-around;
     padding: 0 20px;
+    margin-top: 20px;
 
     .feature-item {
       text-align: center;
-      color: #fff;
+      color: #666;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      flex: 1;
+      margin: 0 8px;
 
       .feature-icon {
         font-size: 32px;
