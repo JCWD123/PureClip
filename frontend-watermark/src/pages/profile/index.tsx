@@ -1,11 +1,21 @@
 import { View, Button, Switch } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useShareAppMessage } from '@tarojs/taro'
 import { useState, useEffect } from 'react'
+import { getUserId, getUserInfo } from '../../utils/user'
 import './index.scss'
 
 export default function Profile() {
   const [showSmartTips, setShowSmartTips] = useState(true)
-  const [userId] = useState('8759892') // 这里应该从用户系统获取
+  const [userId, setUserId] = useState('')
+  const [userIdShort, setUserIdShort] = useState('')
+
+  // ✅ 页面分享配置（Hooks 写法）
+  useShareAppMessage(() => {
+    return {
+      title: 'PureClip去水印 - 快速去除视频水印',
+      path: '/pages/index/index'
+    }
+  })
 
   useEffect(() => {
     // 从本地存储加载设置
@@ -13,6 +23,14 @@ export default function Profile() {
     if (savedTips !== undefined) {
       setShowSmartTips(savedTips)
     }
+
+    // 获取用户ID
+    getUserId().then(id => {
+      setUserId(id)
+      // 显示ID的前8位（用于界面展示）
+      setUserIdShort(id.substring(0, 8))
+      console.log('✅ 个人中心 - 用户信息:', getUserInfo())
+    })
   }, [])
 
   const handleSmartTipsChange = (e: any) => {
@@ -42,41 +60,6 @@ export default function Profile() {
     })
   }
 
-  const handleShareClick = () => {
-    Taro.showShareMenu({
-      withShareTicket: true,
-      showShareItems: ['wechatFriends', 'wechatMoment']
-    })
-    
-    Taro.showToast({
-      title: '点击右上角分享',
-      icon: 'none',
-      duration: 2000
-    })
-  }
-
-  const handleContactClick = () => {
-    Taro.showModal({
-      title: '联系客服',
-      content: '客服微信：pureclip001\n\n或点击"复制"按钮复制微信号，然后在微信中添加好友',
-      confirmText: '复制微信号',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          Taro.setClipboardData({
-            data: 'pureclip001',
-            success: () => {
-              Taro.showToast({
-                title: '微信号已复制',
-                icon: 'success'
-              })
-            }
-          })
-        }
-      }
-    })
-  }
-
   return (
     <View className='profile-page'>
       {/* 用户信息区域 */}
@@ -85,7 +68,7 @@ export default function Profile() {
           <View className='avatar-placeholder'>👤</View>
         </View>
         <View className='user-info'>
-          <View className='user-id'>ID: {userId}</View>
+          <View className='user-id'>ID: {userIdShort || '加载中...'}</View>
         </View>
       </View>
 
@@ -113,27 +96,31 @@ export default function Profile() {
           <View className='menu-arrow'>›</View>
         </View>
 
-        {/* 分享 */}
-        <View className='menu-item' onClick={handleShareClick}>
-          <View className='menu-left'>
-            <View className='menu-icon' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'>
-              📤
+        {/* 分享 - 使用微信原生分享 */}
+        <Button className='menu-item-button' openType='share'>
+          <View className='menu-item'>
+            <View className='menu-left'>
+              <View className='menu-icon' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'>
+                📤
+              </View>
+              <View className='menu-text'>分享</View>
             </View>
-            <View className='menu-text'>分享</View>
+            <View className='menu-arrow'>›</View>
           </View>
-          <View className='menu-arrow'>›</View>
-        </View>
+        </Button>
 
-        {/* 联系客服 */}
-        <View className='menu-item' onClick={handleContactClick}>
-          <View className='menu-left'>
-            <View className='menu-icon' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'>
-              👥
+        {/* 联系客服 - 使用微信官方客服 */}
+        <Button className='menu-item-button' openType='contact'>
+          <View className='menu-item'>
+            <View className='menu-left'>
+              <View className='menu-icon' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'>
+                👥
+              </View>
+              <View className='menu-text'>联系客服</View>
             </View>
-            <View className='menu-text'>联系客服</View>
+            <View className='menu-arrow'>›</View>
           </View>
-          <View className='menu-arrow'>›</View>
-        </View>
+        </Button>
       </View>
 
       {/* 智能提示弹框 */}

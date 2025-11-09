@@ -17,6 +17,7 @@ from backend_watermark.core.minio_client import get_minio
 
 # 导入路由
 from backend_watermark.api import task_router, history_router
+from backend_watermark.api.proxy import router as proxy_router
 
 # 配置日志
 logging.basicConfig(
@@ -96,6 +97,7 @@ app.add_middleware(
 # 注册路由
 app.include_router(task_router, prefix="/api", tags=["任务管理"])
 app.include_router(history_router, prefix="/api", tags=["历史记录"])
+app.include_router(proxy_router, prefix="/api", tags=["代理下载"])
 
 
 @app.get("/")

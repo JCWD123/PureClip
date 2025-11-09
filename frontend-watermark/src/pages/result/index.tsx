@@ -2,6 +2,7 @@ import { View, Button, Video, Image } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import { taskApi } from '../../services/api'
+import { API_BASE_URL } from '../../config/api'
 import './index.scss'
 
 export default function Result() {
@@ -94,14 +95,21 @@ export default function Result() {
         mask: true
       })
 
-      // 步骤1: 下载文件到本地临时目录
+      // ✅ 使用后端代理下载（解决域名限制问题）
+      const proxyUrl = `${API_BASE_URL}/proxy/download?url=${encodeURIComponent(task.result_url)}`
+      
+      console.log('📥 使用代理下载:', proxyUrl)
+
+      // 步骤1: 通过代理下载文件到本地临时目录
       const downloadResult = await Taro.downloadFile({
-        url: task.result_url
+        url: proxyUrl  // ✅ 使用代理URL
       })
 
       if (downloadResult.statusCode !== 200) {
         throw new Error('下载失败')
       }
+      
+      console.log('✅ 下载成功，文件路径:', downloadResult.tempFilePath)
 
       Taro.showLoading({
         title: '保存中...',

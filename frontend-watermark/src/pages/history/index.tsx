@@ -2,24 +2,39 @@ import { View, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import { historyApi } from '../../services/api'
+import { getUserId } from '../../utils/user'
 import './index.scss'
 
 export default function History() {
   const [historyList, setHistoryList] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [userId, setUserId] = useState('')
 
   useEffect(() => {
-    fetchHistory()
+    // 获取用户ID并加载历史记录
+    getUserId().then(id => {
+      setUserId(id)
+      console.log('✅ 历史记录 - 当前用户ID:', id)
+      fetchHistory(id)
+    })
   }, [])
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (uid?: string) => {
+    const currentUserId = uid || userId
+    
+    if (!currentUserId) {
+      console.error('❌ 用户ID未初始化')
+      return
+    }
+
     try {
       setLoading(true)
       const result = await historyApi.getHistory({
-        user_id: 'test_user_001', // 这里应该从用户系统获取
+        user_id: currentUserId,  // ✅ 使用真实的用户ID
         limit: 50
       })
       setHistoryList(result.history || [])
+      console.log(`✅ 加载了 ${result.history?.length || 0} 条历史记录`)
     } catch (error) {
       console.error('获取历史记录失败:', error)
       Taro.showToast({

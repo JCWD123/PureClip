@@ -1,9 +1,10 @@
 import { View, Input, Button, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { setCurrentTask } from '../../store/taskSlice'
 import { taskApi } from '../../services/api'
+import { getUserId } from '../../utils/user'
 import './index.scss'
 
 export default function Index() {
@@ -12,6 +13,15 @@ export default function Index() {
   const [mediaType, setMediaType] = useState<'video' | 'image'>('video')
   const [method, setMethod] = useState<'crop' | 'blur' | 'cover' | 'inpaint'>('crop')
   const [loading, setLoading] = useState(false)
+  const [userId, setUserId] = useState('')
+
+  // 获取用户ID
+  useEffect(() => {
+    getUserId().then(id => {
+      setUserId(id)
+      console.log('✅ 当前用户ID:', id)
+    })
+  }, [])
 
   const mediaTypeOptions = [
     { label: '视频', value: 'video' },
@@ -49,15 +59,23 @@ export default function Index() {
       return
     }
 
+    if (!userId) {
+      Taro.showToast({
+        title: '用户信息加载中，请稍候...',
+        icon: 'none'
+      })
+      return
+    }
+
     try {
       setLoading(true)
 
-      // 创建任务
+      // 创建任务（使用真实的用户ID）
       const result = await taskApi.createTask({
         url,
         media_type: mediaType,
         method,
-        user_id: 'test_user_001' // 这里应该从用户系统获取
+        user_id: userId  // ✅ 使用真实的用户ID
       })
 
       dispatch(setCurrentTask(result))

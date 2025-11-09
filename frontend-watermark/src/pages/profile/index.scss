@@ -44,6 +44,20 @@
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
+    // 联系客服按钮样式（移除按钮默认样式）
+    .menu-item-button {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: none;
+      text-align: left;
+      
+      &::after {
+        border: none;
+      }
+    }
+
     .menu-item {
       display: flex;
       align-items: center;
