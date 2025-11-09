@@ -8,8 +8,9 @@ echo "🔄 重启 PureClip 所有服务"
 echo "==========================================="
 echo ""
 
-# 确保在正确的目录
-cd "$(dirname "$0")"
+# 切换到脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
 # 1. 停止所有服务
 echo "📋 步骤 1/3: 停止现有服务"

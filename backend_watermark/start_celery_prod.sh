@@ -9,8 +9,13 @@ echo "📁 工作目录: $(pwd)"
 echo "🐍 Python: $(python --version 2>&1)"
 echo "-----------------------------------"
 
-# 确保在正确的目录
-cd "$(dirname "$0")"
+# 切换到项目根目录
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+
+echo "📂 项目根目录: $(pwd)"
+echo "-----------------------------------"
 
 # 设置生产环境
 export ENV=production

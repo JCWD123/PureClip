@@ -6,6 +6,10 @@
 echo "🛑 停止 PureClip 所有服务"
 echo "-----------------------------------"
 
+# 切换到项目根目录（如果需要）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # 停止 FastAPI
 echo "🛑 停止 FastAPI..."
 pkill -f "uvicorn backend_watermark.app:app"
