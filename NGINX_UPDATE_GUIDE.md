@@ -311,3 +311,4 @@ sudo tail -f /var/log/nginx/pureclip_access.log
 
 **现在运行 `sudo bash update_nginx.sh` 开始更新吧！🚀**
 
+

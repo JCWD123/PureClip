@@ -27,7 +27,7 @@ class CallbackTask(Task):
 @celery_app.task(base=CallbackTask, bind=True)
 def process_watermark_task(self, task_id: str):
     """
-    处理去水印任务
+    处理去水印任务 - 轻量级模式（直接返回解析后的URL）
     
     Args:
         task_id: 任务ID
@@ -36,7 +36,6 @@ def process_watermark_task(self, task_id: str):
     
     db = get_mongodb()
     redis = get_redis()
-    minio = get_minio()
     collection = db.get_collection("watermark_tasks")
     
     try:
@@ -45,59 +44,57 @@ def process_watermark_task(self, task_id: str):
         if not task:
             raise Exception(f"任务不存在: {task_id}")
         
-        # 更新任务状态：下载中
-        update_task_status(task_id, TaskStatus.DOWNLOADING, 10)
+        # 更新任务状态：解析中
+        update_task_status(task_id, TaskStatus.DOWNLOADING, 10, message="正在解析视频链接...")
         
-        # 1. 下载原始文件
+        # 1. 解析视频链接（使用iiilab API）
         downloader = Downloader()
-        local_file = downloader.download(task["url"], task["media_type"])
-        logger.info(f"文件下载完成: {local_file}")
+        from backend_watermark.services.video_parser import VideoParser
+        parser = VideoParser()
         
-        # 更新任务状态：处理中
-        update_task_status(task_id, TaskStatus.PROCESSING, 30)
+        logger.info(f"开始解析链接: {task['url']}")
+        parse_result = parser.parse(task["url"])
         
-        # 2. 处理文件（去水印）
-        if task["media_type"] == MediaType.VIDEO.value:
-            processor = VideoProcessor()
-            result_file = processor.remove_watermark(
-                local_file,
-                method=WatermarkMethod(task["method"]),
-                region=task.get("watermark_region")
-            )
-        else:  # IMAGE
-            processor = ImageProcessor()
-            result_file = processor.remove_watermark(
-                local_file,
-                method=WatermarkMethod(task["method"]),
-                region=task.get("watermark_region")
-            )
+        if not parse_result['success']:
+            raise Exception(f"链接解析失败: {parse_result.get('error', '未知错误')}")
         
-        logger.info(f"文件处理完成: {result_file}")
+        # 2. 获取真实视频URL（这个URL已经是无水印版本）
+        result_url = parse_result['video_url']
+        video_title = parse_result.get('title', '未知标题')
+        video_cover = parse_result.get('cover')
+        video_author = parse_result.get('author')
         
-        # 更新任务状态：上传中
-        update_task_status(task_id, TaskStatus.UPLOADING, 70)
+        logger.info(f"✅ 解析成功！")
+        logger.info(f"   标题: {video_title}")
+        logger.info(f"   视频URL: {result_url[:100]}...")
         
-        # 3. 上传到MinIO
-        object_name = f"{task['media_type']}/{task_id}/{os.path.basename(result_file)}"
-        result_url = minio.upload_file(result_file, object_name)
-        logger.info(f"文件上传完成: {result_url}")
+        # 更新任务状态：处理中（获取元数据）
+        update_task_status(task_id, TaskStatus.PROCESSING, 50, message="正在获取视频信息...")
+        
+        # 3. 获取视频元数据（可选，用于前端显示）
+        metadata = {
+            'title': video_title,
+            'cover': video_cover,
+            'author': video_author,
+            'platform': parse_result.get('platform', 'unknown')
+        }
         
         # 4. 更新任务状态：完成
         update_task_status(
             task_id,
             TaskStatus.COMPLETED,
             100,
-            result_url=result_url
+            result_url=result_url,
+            metadata=metadata,
+            message="解析完成！"
         )
         
-        # 5. 保存处理历史
-        save_process_history(task, result_file, result_url)
+        # 5. 保存处理历史（简化版）
+        save_parse_history(task, result_url, metadata)
         
-        # 6. 清理临时文件
-        cleanup_files([local_file, result_file])
-        
-        logger.info(f"任务处理完成: {task_id}")
-        return {"task_id": task_id, "result_url": result_url}
+        logger.info(f"✅ 任务处理完成: {task_id}")
+        logger.info(f"✅ 返回URL: {result_url}")
+        return {"task_id": task_id, "result_url": result_url, "metadata": metadata}
         
     except Exception as e:
         logger.error(f"任务处理失败: {task_id}, 错误: {e}")
@@ -117,7 +114,9 @@ def update_task_status(
     status: TaskStatus,
     progress: int = None,
     result_url: str = None,
-    error_message: str = None
+    error_message: str = None,
+    metadata: dict = None,
+    message: str = None
 ):
     """
     更新任务状态
@@ -128,6 +127,8 @@ def update_task_status(
         progress: 进度（0-100）
         result_url: 结果URL
         error_message: 错误信息
+        metadata: 元数据（标题、封面等）
+        message: 状态消息
     """
     db = get_mongodb()
     redis = get_redis()
@@ -148,6 +149,12 @@ def update_task_status(
     if error_message:
         update_data["error_message"] = error_message
     
+    if metadata:
+        update_data["metadata"] = metadata
+    
+    if message:
+        update_data["message"] = message
+    
     # 更新MongoDB
     collection.update_one(
         {"task_id": task_id},
@@ -159,7 +166,7 @@ def update_task_status(
     if task:
         redis.set(f"task:{task_id}", task, expire=3600 * 24)
     
-    logger.info(f"任务状态更新: {task_id} -> {status.value}")
+    logger.info(f"任务状态更新: {task_id} -> {status.value} ({message or ''})")
 
 
 def save_process_history(task: dict, result_file: str, result_url: str):
@@ -198,6 +205,41 @@ def save_process_history(task: dict, result_file: str, result_url: str):
     
     collection.insert_one(history)
     logger.info(f"处理历史已保存: {history['history_id']}")
+
+
+def save_parse_history(task: dict, result_url: str, metadata: dict):
+    """
+    保存解析历史记录（轻量级模式）
+    
+    Args:
+        task: 任务信息
+        result_url: 结果URL
+        metadata: 视频元数据
+    """
+    if not task.get("user_id"):
+        return
+    
+    db = get_mongodb()
+    collection = db.get_collection("process_history")
+    
+    # 计算处理耗时
+    process_time = (datetime.now() - task["created_at"]).total_seconds()
+    
+    history = {
+        "history_id": str(uuid.uuid4()),
+        "user_id": task["user_id"],
+        "task_id": task["task_id"],
+        "original_url": task.get("original_input", task["url"]),
+        "result_url": result_url,
+        "media_type": task["media_type"],
+        "method": "parse",  # 标记为解析模式
+        "process_time": process_time,
+        "metadata": metadata,  # 保存元数据（标题、封面等）
+        "created_at": datetime.now()
+    }
+    
+    collection.insert_one(history)
+    logger.info(f"解析历史已保存: {history['history_id']}")
 
 
 def cleanup_files(files: list):

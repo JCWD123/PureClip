@@ -47,10 +47,18 @@ export default function Result() {
         data: task.result_url,
         success: () => {
           Taro.showToast({
-            title: '链接已复制',
+            title: '视频链接已复制',
             icon: 'success',
             duration: 2000
           })
+          // 额外提示：可在浏览器中打开
+          setTimeout(() => {
+            Taro.showToast({
+              title: '可在浏览器中打开下载',
+              icon: 'none',
+              duration: 2000
+            })
+          }, 2100)
         },
         fail: () => {
           Taro.showToast({
@@ -153,11 +161,11 @@ export default function Result() {
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
       pending: '等待处理',
-      downloading: '下载中',
-      processing: '处理中',
-      uploading: '上传中',
-      completed: '处理完成',
-      failed: '处理失败'
+      downloading: '解析中',
+      processing: '获取信息中',
+      uploading: '准备完成',
+      completed: '解析完成',
+      failed: '解析失败'
     }
     return statusMap[status] || status
   }
@@ -254,20 +262,36 @@ export default function Result() {
           {/* 视频信息 */}
           {task.metadata && (
             <View className='info-section'>
-              <View className='info-row'>
-                <View className='info-label'>时长：</View>
-                <View className='info-value'>
-                  {task.metadata.duration ? `${task.metadata.duration}秒` : '未知'}
+              {task.metadata.title && (
+                <View className='info-row'>
+                  <View className='info-label'>标题：</View>
+                  <View className='info-value'>{task.metadata.title}</View>
                 </View>
-              </View>
-              <View className='info-row'>
-                <View className='info-label'>分辨率：</View>
-                <View className='info-value'>
-                  {task.metadata.width && task.metadata.height 
-                    ? `${task.metadata.width}x${task.metadata.height}`
-                    : '未知'}
+              )}
+              {task.metadata.author && (
+                <View className='info-row'>
+                  <View className='info-label'>作者：</View>
+                  <View className='info-value'>{task.metadata.author}</View>
                 </View>
-              </View>
+              )}
+              {task.metadata.platform && (
+                <View className='info-row'>
+                  <View className='info-label'>平台：</View>
+                  <View className='info-value'>{task.metadata.platform}</View>
+                </View>
+              )}
+              {task.metadata.duration && (
+                <View className='info-row'>
+                  <View className='info-label'>时长：</View>
+                  <View className='info-value'>{task.metadata.duration}秒</View>
+                </View>
+              )}
+              {task.metadata.width && task.metadata.height && (
+                <View className='info-row'>
+                  <View className='info-label'>分辨率：</View>
+                  <View className='info-value'>{task.metadata.width}x{task.metadata.height}</View>
+                </View>
+              )}
             </View>
           )}
 
