@@ -49,69 +49,80 @@ async def proxy_download(
             logger.error(f"❌ 无效的URL: {url}")
             raise HTTPException(status_code=400, detail="无效的URL")
         
-        # 创建HTTP客户端（支持重定向）
-        async with httpx.AsyncClient(
-            timeout=120.0,  # 2分钟超时
-            follow_redirects=True,
-            verify=True
-        ) as client:
-            
-            # 发送HEAD请求获取文件信息
-            try:
-                head_response = await client.head(url)
+        # 获取文件信息（用于响应头）
+        content_type = 'application/octet-stream'
+        content_length = None
+        
+        try:
+            # 创建临时客户端获取文件信息
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as temp_client:
+                head_response = await temp_client.head(url)
                 content_type = head_response.headers.get('content-type', 'application/octet-stream')
                 content_length = head_response.headers.get('content-length')
                 
                 logger.info(f"✅ 文件信息获取成功")
                 logger.info(f"  Content-Type: {content_type}")
                 logger.info(f"  Content-Length: {content_length} bytes")
-                
-            except Exception as e:
-                # HEAD请求失败，直接尝试GET
-                logger.warning(f"⚠️ HEAD请求失败，使用GET: {e}")
-                content_type = 'application/octet-stream'
-                content_length = None
-            
-            # 流式下载文件
-            async def generate():
-                """生成器函数，流式返回文件内容"""
-                try:
+        except Exception as e:
+            logger.warning(f"⚠️ HEAD请求失败，使用默认值: {e}")
+        
+        # ✅ 修复：在生成器内部创建 client，确保生命周期正确
+        async def generate():
+            """生成器函数，流式返回文件内容"""
+            try:
+                # 在生成器内部创建独立的 client
+                async with httpx.AsyncClient(
+                    timeout=120.0,
+                    follow_redirects=True,
+                    verify=True
+                ) as client:
+                    logger.info(f"📥 开始下载文件...")
+                    
                     async with client.stream('GET', url) as response:
                         response.raise_for_status()
                         
                         total_size = 0
+                        chunk_count = 0
                         async for chunk in response.aiter_bytes(chunk_size=8192):
                             total_size += len(chunk)
+                            chunk_count += 1
                             yield chunk
+                            
+                            # 每传输 1MB 记录一次日志
+                            if chunk_count % 128 == 0:  # 128 * 8KB = 1MB
+                                logger.info(f"  已传输: {total_size / 1024 / 1024:.2f} MB")
                         
-                        logger.info(f"✅ 下载完成，总大小: {total_size} bytes")
+                        logger.info(f"✅ 下载完成，总大小: {total_size / 1024 / 1024:.2f} MB ({total_size} bytes)")
                         
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"❌ HTTP错误: {e.response.status_code}")
-                    raise
-                except Exception as e:
-                    logger.error(f"❌ 下载错误: {str(e)}")
-                    raise
-            
-            # 构建响应头
-            headers = {
-                'Content-Type': content_type,
-                'Content-Disposition': 'attachment',
-                'Cache-Control': 'no-cache',
-                'Access-Control-Allow-Origin': '*'
-            }
-            
-            if content_length:
-                headers['Content-Length'] = content_length
-            
-            logger.info(f"📤 开始流式返回文件")
-            
-            # 返回流式响应
-            return StreamingResponse(
-                generate(),
-                headers=headers,
-                media_type=content_type
-            )
+            except httpx.HTTPStatusError as e:
+                logger.error(f"❌ HTTP错误: {e.response.status_code}")
+                raise
+            except httpx.TimeoutException:
+                logger.error(f"❌ 下载超时")
+                raise
+            except Exception as e:
+                logger.error(f"❌ 下载错误: {str(e)}")
+                raise
+        
+        # 构建响应头
+        headers = {
+            'Content-Type': content_type,
+            'Content-Disposition': 'attachment',
+            'Cache-Control': 'no-cache',
+            'Access-Control-Allow-Origin': '*'
+        }
+        
+        if content_length:
+            headers['Content-Length'] = content_length
+        
+        logger.info(f"📤 返回流式响应")
+        
+        # 返回流式响应
+        return StreamingResponse(
+            generate(),
+            headers=headers,
+            media_type=content_type
+        )
             
     except httpx.HTTPStatusError as e:
         logger.error(f"❌ 下载失败 - HTTP错误 {e.response.status_code}")
