@@ -112,6 +112,8 @@ VIDEO_PLATFORM_PATTERNS = {
     'tiktok': r'www\.tiktok\.com|vm\.tiktok\.com',
     'xiaohongshu': r'xhslink\.com|www\.xiaohongshu\.com',
     'baidu': r'mr\.baidu\.com|pan\.baidu\.com',
+    'jimeng': r'jimeng\.jianying\.com',
+    'qq': r'newsa\.html5\.qq\.com',
 }
 
 
