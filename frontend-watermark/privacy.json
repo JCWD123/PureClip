@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "desc": "PureClip 用于保存用户下载的视频到手机相册，帮助用户在本地查看和分享视频。",
+  "apis": [
+    {
+      "api": "saveVideoToPhotosAlbum",
+      "desc": "保存处理后的视频文件到用户相册，用于用户离线观看或分享。"
+    },
+    {
+      "api": "saveImageToPhotosAlbum",
+      "desc": "保存处理后的图片文件到用户相册，用于用户离线查看或分享。"
+    },
+    {
+      "api": "getClipboardData",
+      "desc": "获取用户剪贴板中的视频/图片分享链接，方便用户快速粘贴待处理的内容。"
+    }
+  ]
+}
+

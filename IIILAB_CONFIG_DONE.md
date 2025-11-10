@@ -419,3 +419,4 @@ curl -X GET http://localhost:8001/api/tasks/{task_id}
 **现在重启 Celery，测试一下百度链接吧！应该能成功了！🎉**
 
 
+

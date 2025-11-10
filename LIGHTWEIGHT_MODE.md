@@ -450,3 +450,4 @@ def _parse_api_response(self, data: Dict, platform: str) -> Dict[str, Any]:
 sudo systemctl restart pureclip-celery pureclip-api
 ```
 
+

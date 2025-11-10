@@ -150,3 +150,4 @@ sudo systemctl disable minio  # 禁用开机自启
 sudo bash deploy_lightweight_mode.sh
 ```
 
+

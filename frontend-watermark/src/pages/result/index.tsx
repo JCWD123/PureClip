@@ -3,6 +3,7 @@ import Taro, { useRouter } from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import { taskApi } from '../../services/api'
 import { API_BASE_URL } from '../../config/api'
+import { saveVideoWithAuth, saveImageWithAuth, checkPrivacyAgreement } from '../../utils/saveVideo'
 import './index.scss'
 
 export default function Result() {
@@ -90,17 +91,31 @@ export default function Result() {
       // 判断是视频还是图片
       const isVideo = task.result_url.includes('.mp4') || task.result_url.includes('video')
 
+      // ✅ 步骤1: 检查隐私协议状态（微信2.0隐私协议）
+      console.log('🔍 检查隐私协议状态...')
+      const needPrivacy = await checkPrivacyAgreement()
+      if (needPrivacy) {
+        Taro.showModal({
+          title: '隐私提示',
+          content: '下载功能需要访问您的相册。我们严格遵守微信隐私规范，不会泄露您的个人信息。',
+          confirmText: '我知道了',
+          showCancel: false
+        })
+        setDownloading(false)
+        return
+      }
+
       Taro.showLoading({
         title: '准备下载...',
         mask: true
       })
 
-      // ✅ 使用后端代理下载（解决域名限制问题）
+      // ✅ 步骤2: 使用后端代理下载（解决域名限制问题）
       const proxyUrl = `${API_BASE_URL}/proxy/download?url=${encodeURIComponent(task.result_url)}`
       
       console.log('📥 使用代理下载:', proxyUrl)
 
-      // 步骤1: 通过代理下载文件到本地临时目录
+      // 通过代理下载文件到本地临时目录
       const downloadResult = await Taro.downloadFile({
         url: proxyUrl  // ✅ 使用代理URL
       })
@@ -111,48 +126,25 @@ export default function Result() {
       
       console.log('✅ 下载成功，文件路径:', downloadResult.tempFilePath)
 
-      Taro.showLoading({
-        title: '保存中...',
-        mask: true
-      })
+      Taro.hideLoading()
 
-      // 步骤2: 保存到相册
+      // ✅ 步骤3: 使用授权检测保存到相册（自动处理权限申请）
       if (isVideo) {
-        await Taro.saveVideoToPhotosAlbum({
-          filePath: downloadResult.tempFilePath
-        })
+        await saveVideoWithAuth(downloadResult.tempFilePath)
       } else {
-        await Taro.saveImageToPhotosAlbum({
-          filePath: downloadResult.tempFilePath
-        })
+        await saveImageWithAuth(downloadResult.tempFilePath)
       }
 
-      Taro.hideLoading()
-      
-      Taro.showModal({
-        title: '保存成功',
-        content: `${isVideo ? '视频' : '图片'}已保存到相册`,
-        showCancel: false,
-        confirmText: '好的'
-      })
+      console.log('🎉 保存成功')
     } catch (error: any) {
       Taro.hideLoading()
       
-      // 处理用户拒绝授权的情况
-      if (error.errMsg && error.errMsg.includes('auth')) {
-        Taro.showModal({
-          title: '需要相册权限',
-          content: '请在设置中允许访问相册',
-          confirmText: '去设置',
-          success: (res) => {
-            if (res.confirm) {
-              Taro.openSetting()
-            }
-          }
-        })
-      } else {
+      console.error('❌ 下载失败:', error)
+      
+      // 只有在非用户主动取消的情况下才显示错误提示
+      if (error !== '用户取消保存' && error !== '用户拒绝授权' && error !== '用户拒绝前往设置') {
         Taro.showToast({
-          title: error.errMsg || '保存失败',
+          title: error.errMsg || '下载失败，请稍后重试',
           icon: 'none',
           duration: 2000
         })

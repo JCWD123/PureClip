@@ -686,3 +686,4 @@ npm run build:weapp
 3. `enableShareAppMessage: true` 是否已配置
 4. 是否清理并重新编译了项目
 
+
