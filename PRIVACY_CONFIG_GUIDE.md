@@ -458,3 +458,4 @@ pnpm build:weapp
 
 **按照本指南配置后，PureClip 将完全符合微信小程序的隐私规范要求！** 🚀
 
+

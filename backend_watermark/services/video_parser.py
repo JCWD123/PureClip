@@ -3,6 +3,7 @@ import requests
 import logging
 import re
 from typing import Optional, Dict, Any
+from lxml import etree
 from backend_watermark.utils.url_extractor import detect_platform
 from backend_watermark.config.config import settings
 
@@ -360,105 +361,158 @@ class VideoParser:
         专门处理即梦AI链接的解析
         即梦是剪映旗下的AI生成内容平台
         
+        解析策略：
+        1. 访问即梦分享页面
+        2. 使用xpath定位<video>标签
+        3. 提取video标签的src属性作为真实视频URL
+        4. 返回标准化的iiilab格式数据
+        
         Args:
-            url: 即梦分享链接 (例如: https://jimeng.jianying.com/s/KloSTWIHQ1Y/?t=210)
+            url: 即梦分享链接 (例如: https://jimeng.jianying.com/s/bYeEyb6ThwU/?t=210)
             
         Returns:
-            解析结果
+            解析结果 (与iiilab接口格式一致):
+            {
+                'success': True/False,
+                'video_url': '真实视频URL',
+                'title': '视频标题',
+                'cover': '封面图URL',
+                'author': '作者',
+                'platform': 'jimeng',
+                'error': None
+            }
         """
-        logger.info(f"使用即梦AI专用解析器: {url}")
+        logger.info(f"🎬 使用即梦AI专用解析器")
+        logger.info(f"📎 分享链接: {url}")
         
         try:
-            # 方法1: 直接访问页面，尝试提取视频URL
+            # 1️⃣ 请求即梦分享页面
             headers = {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.38',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.38',
                 'Referer': 'https://jimeng.jianying.com/',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'zh-CN,zh;q=0.9'
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive'
             }
             
+            logger.info(f"📡 正在请求即梦页面...")
             response = requests.get(url, headers=headers, timeout=self.timeout, allow_redirects=True)
             response.raise_for_status()
+            response.encoding = 'utf-8'
             
             html_content = response.text
-            logger.info(f"即梦页面获取成功，长度: {len(html_content)}")
+            logger.info(f"✅ 页面获取成功，大小: {len(html_content)} bytes")
             
-            # 尝试从HTML中提取视频URL
-            # 即梦可能在页面的script标签中嵌入视频数据
-            video_url_patterns = [
-                r'"videoUrl":\s*"([^"]+)"',
-                r'"video_url":\s*"([^"]+)"',
-                r'"url":\s*"(https://[^"]*\.mp4[^"]*)"',
-                r'<video[^>]*src="([^"]+)"',
-                r'"resource_url":\s*"([^"]+)"',
-                r'"playUrl":\s*"([^"]+)"',
-            ]
-            
-            video_url = None
-            for pattern in video_url_patterns:
-                match = re.search(pattern, html_content)
-                if match:
-                    video_url = match.group(1)
-                    # URL可能被转义，需要解码
-                    video_url = video_url.replace('\\/', '/')
-                    logger.info(f"✅ 从即梦页面提取到视频URL: {video_url[:100]}...")
-                    break
-            
-            if video_url:
-                # 提取标题
-                title_match = re.search(r'"title":\s*"([^"]+)"', html_content)
-                title = title_match.group(1) if title_match else None
+            # 2️⃣ 使用lxml解析HTML
+            try:
+                # 使用HTMLParser解析HTML（容错能力强）
+                parser = etree.HTMLParser(encoding='utf-8')
+                tree = etree.fromstring(html_content, parser)
                 
-                # 提取封面
-                cover_match = re.search(r'"cover":\s*"([^"]+)"', html_content)
-                cover = cover_match.group(1) if cover_match else None
+                logger.info(f"✅ HTML解析成功")
+                
+                # 3️⃣ 使用xpath定位<video>标签的src属性
+                # xpath语法：//video/@src 表示获取所有video标签的src属性
+                video_srcs = tree.xpath('//video/@src')
+                
+                if video_srcs and len(video_srcs) > 0:
+                    # 获取第一个video标签的src
+                    video_url = video_srcs[0]
+                    
+                    # URL可能被HTML转义，需要反转义
+                    # 例如: &amp; -> &
+                    import html
+                    video_url = html.unescape(video_url)
+                    
+                    logger.info(f"✅ 成功定位到<video>标签")
+                    logger.info(f"🎥 视频URL: {video_url[:100]}...")
+                    
+                    # 4️⃣ 提取标题（尝试多个可能的位置）
+                    title = None
+                    
+                    # 尝试从<title>标签提取
+                    title_elements = tree.xpath('//title/text()')
+                    if title_elements:
+                        title = title_elements[0].strip()
+                    
+                    # 尝试从meta标签提取
+                    if not title:
+                        meta_titles = tree.xpath('//meta[@property="og:title"]/@content')
+                        if meta_titles:
+                            title = meta_titles[0].strip()
+                    
+                    # 尝试从h1标签提取
+                    if not title:
+                        h1_elements = tree.xpath('//h1/text()')
+                        if h1_elements:
+                            title = h1_elements[0].strip()
+                    
+                    # 默认标题
+                    if not title:
+                        title = '即梦AI作品'
+                    
+                    logger.info(f"📝 标题: {title}")
+                    
+                    # 5️⃣ 提取封面图（可选）
+                    cover = None
+                    
+                    # 尝试从video标签的poster属性提取
+                    poster_urls = tree.xpath('//video/@poster')
+                    if poster_urls:
+                        cover = html.unescape(poster_urls[0])
+                    
+                    # 尝试从meta标签提取
+                    if not cover:
+                        meta_images = tree.xpath('//meta[@property="og:image"]/@content')
+                        if meta_images:
+                            cover = meta_images[0]
+                    
+                    if cover:
+                        logger.info(f"🖼️ 封面: {cover[:100]}...")
+                    
+                    # 6️⃣ 返回标准化格式（与iiilab接口一致）
+                    return {
+                        'success': True,
+                        'video_url': video_url,
+                        'title': title,
+                        'cover': cover,
+                        'author': None,  # 即梦页面暂不提供作者信息
+                        'platform': 'jimeng',
+                        'error': None
+                    }
+                
+                else:
+                    # 没有找到video标签
+                    logger.warning("⚠️ 页面中未找到<video>标签")
+                    logger.info(f"📄 页面预览: {html_content[:500]}...")
+                    
+                    return {
+                        'success': False,
+                        'video_url': None,
+                        'title': None,
+                        'cover': None,
+                        'author': None,
+                        'platform': 'jimeng',
+                        'error': '即梦页面中未找到视频标签，可能需要登录或该链接已失效'
+                    }
+            
+            except etree.ParseError as e:
+                logger.error(f"❌ HTML解析失败: {e}")
+                logger.info(f"📄 HTML内容预览: {html_content[:500]}...")
                 
                 return {
-                    'success': True,
-                    'video_url': video_url,
-                    'title': title or '即梦AI作品',
-                    'cover': cover,
+                    'success': False,
+                    'video_url': None,
+                    'title': None,
+                    'cover': None,
                     'author': None,
                     'platform': 'jimeng',
-                    'error': None
+                    'error': f'即梦页面HTML解析失败: {str(e)}'
                 }
             
-            # 方法2: 如果没找到视频URL，尝试提取分享ID后构造API
-            share_id_match = re.search(r'/s/([^/?]+)', url)
-            if share_id_match:
-                share_id = share_id_match.group(1)
-                logger.info(f"提取到分享ID: {share_id}")
-                
-                # 尝试调用可能存在的API
-                api_url = f"https://jimeng.jianying.com/api/share/detail?share_id={share_id}"
-                api_response = requests.get(api_url, headers=headers, timeout=self.timeout)
-                
-                if api_response.status_code == 200:
-                    api_data = api_response.json()
-                    logger.info(f"即梦API响应: {api_data}")
-                    
-                    # 尝试从API响应中提取视频URL
-                    video_data = api_data.get('data', {})
-                    video_url = (
-                        video_data.get('video_url') or
-                        video_data.get('videoUrl') or
-                        video_data.get('resource_url') or
-                        video_data.get('url')
-                    )
-                    
-                    if video_url:
-                        return {
-                            'success': True,
-                            'video_url': video_url,
-                            'title': video_data.get('title') or '即梦AI作品',
-                            'cover': video_data.get('cover'),
-                            'author': video_data.get('author'),
-                            'platform': 'jimeng',
-                            'error': None
-                        }
-            
-            # 如果都失败了
-            logger.warning("即梦链接解析失败：未能提取视频URL")
+        except requests.RequestException as e:
+            logger.error(f"❌ 即梦页面请求失败: {e}")
             return {
                 'success': False,
                 'video_url': None,
@@ -466,11 +520,11 @@ class VideoParser:
                 'cover': None,
                 'author': None,
                 'platform': 'jimeng',
-                'error': '即梦平台暂不支持自动解析，请使用其他平台链接'
+                'error': f'即梦页面请求失败: {str(e)}'
             }
-            
+        
         except Exception as e:
-            logger.error(f"即梦链接解析失败: {e}")
+            logger.error(f"❌ 即梦链接解析失败: {e}")
             return {
                 'success': False,
                 'video_url': None,

@@ -454,3 +454,4 @@ celery -A backend_watermark.celery_app.celery worker --loglevel=info
 
 
 
+

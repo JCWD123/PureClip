@@ -27,6 +27,10 @@ Pillow==10.2.0
 
 # HTTP请求
 requests==2.31.0
+httpx==0.27.0
+
+# HTML解析
+lxml==5.1.0
 
 # 配置文件
 PyYAML==6.0.1
