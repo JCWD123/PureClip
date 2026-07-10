@@ -1,6 +1,6 @@
 # MongoDB配置
 mongodb:
-  uri: "mongodb://root:Jchmy2025@dds-bp13820d540de8541179-pub.mongodb.rds.aliyuncs.com:3717/admin"
+  uri: "mongodb://root:Jchmy2025@dds-bp157cee99cf68441320-pub.mongodb.rds.aliyuncs.com:3717/admin"
   database: "pureclip"
   collection_tasks: "watermark_tasks"
   collection_history: "process_history"
